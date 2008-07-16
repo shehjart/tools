@@ -1,0 +1,4 @@
+#sample nfsconfig.py configuration file
+
+#device names should be comma-separated and without any spaces.
+blkdevs: sdd,sdc,sdb
