@@ -65,6 +65,7 @@ struct run_params {
 	int fd;
 	char * data;
 	u_int64_t flags;
+	int falloc_mode;
 };
 
 void
@@ -86,7 +87,7 @@ write_file(struct run_params rp)
 		}
 
 		if((offset + rp.wrblksize) > falloc_limit) {
-			ret = syscall(__NR_fallocate, rp.fd, FALLOC_FL_KEEP_SIZE,
+			ret = syscall(__NR_fallocate, rp.fd, rp.falloc_mode,
 					offset, rp.falloc_blksize);
 			if(FL_VERBOSE(rp.flags))
 				fprintf(stderr, "fallocate offset: %"PRIu64"\n",
@@ -157,6 +158,7 @@ void init_runparams(struct run_params *rp)
 	rp->runfile = NULL;
 	rp->fd = 0;
 	rp->flags = 0;
+	rp->falloc_mode = FALLOC_FL_KEEP_SIZE;
 };
 
 
@@ -175,10 +177,34 @@ usage()
 	fprintf(stdout, "\t\t--nounlink\n"
 			"\t\t\tNOTE: By default, all test files are removed.\n");
 	fprintf(stdout, "\t\t--verbose\n");
+	fprintf(stdout, "\t\t--fallocmode={DEFAULT:keepsize | allocate |"
+			" resvspace}\n");
 	
 }
-	
 
+static int
+parse_falloc_mode(char * argvstr)
+{
+	char * mode = NULL;
+	if(argvstr == NULL)
+		return -1;
+
+	if(strtok(argvstr, "=") == NULL)
+		return -1;
+
+	mode = strtok(NULL, "=");
+	if(mode == NULL)
+		return -1;
+
+	if(strcmp(mode, "keepsize") == 0)
+		return FALLOC_FL_KEEP_SIZE;
+	else if(strcmp(mode, "allocate") == 0)
+		return FALLOC_ALLOCATE;
+	else if(strcmp(mode, "resvspace") == 0)
+		return FALLOC_RESV_SPACE;
+
+	return -1;
+}
 
 
 int 
@@ -237,6 +263,11 @@ main(int argc, char *argv[])
 			continue;
 		}
 
+		if((strncmp(argv[i], "--fallocmode", 12)) == 0) {
+			rp.falloc_mode = parse_falloc_mode(argv[i]);
+			continue;
+		}
+
 	}
 
 	if(fname == NULL) {
@@ -261,6 +292,12 @@ main(int argc, char *argv[])
 
 	if(rp.falloc_blksize == 0) {
 		fprintf(stderr, "No fallocate blksize given.\n");
+		usage();
+		return -1;
+	}
+
+	if(rp.falloc_mode < 0) {
+		fprintf(stderr, "Unknown falloc mode.\n");
 		usage();
 		return -1;
 	}
