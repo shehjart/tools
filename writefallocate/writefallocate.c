@@ -45,10 +45,12 @@
 #define timeval_to_usecs(ts) (((u_int64_t)ts.tv_sec * 1000000) + ts.tv_usec)
 
 #define FLAG_DONT_UNLINK	0x1
+#define FLAG_VERBOSE		0x2
 
 
 
 #define FL_DONTUNLINK(flags) ((flags) & FLAG_DONT_UNLINK)
+#define FL_VERBOSE(flags) ((flags) & FLAG_VERBOSE)
 
 
 
@@ -74,7 +76,9 @@ write_file(struct run_params rp)
 
 	for(offset = rp.startoff; offset < rp.filesize; offset += written) {
 		written = write(rp.fd, rp.data, rp.wrblksize);
-		fprintf(stderr, "offset: %"PRIu64", written: %"PRIu64"\n", offset, written);
+		if(FL_VERBOSE(rp.flags))
+			fprintf(stderr, "offset: %"PRIu64", written: %"PRIu64"\n",
+					offset, written);
 		if (written < 0) {
 			fprintf(stderr, "Error writing to file: %s: %s\n",
 					rp.runfile, strerror(errno));
@@ -84,7 +88,10 @@ write_file(struct run_params rp)
 		if((offset + rp.wrblksize) > falloc_limit) {
 			ret = syscall(__NR_fallocate, rp.fd, FALLOC_FL_KEEP_SIZE,
 					offset, rp.falloc_blksize);
-			fprintf(stderr, "fallocate offset: %"PRIu64"\n", offset);
+			if(FL_VERBOSE(rp.flags))
+				fprintf(stderr, "fallocate offset: %"PRIu64"\n",
+						offset);
+
 			if(ret < 0) {
 				fprintf(stderr, "Could not fallocate %"PRIu64
 						" bytes at offset %"PRIu64" :%s\n",
@@ -167,6 +174,7 @@ usage()
 			"\t\t\tNOTE: Default runcount is 1.\n");
 	fprintf(stdout, "\t\t--nounlink\n"
 			"\t\t\tNOTE: By default, all test files are removed.\n");
+	fprintf(stdout, "\t\t--verbose\n");
 	
 }
 	
@@ -223,6 +231,12 @@ main(int argc, char *argv[])
 			rp.flags |= FLAG_DONT_UNLINK;
 			continue;
 		}
+
+		if((strcmp(argv[i], "--verbose")) == 0) {
+			rp.flags |= FLAG_VERBOSE;
+			continue;
+		}
+
 	}
 
 	if(fname == NULL) {
