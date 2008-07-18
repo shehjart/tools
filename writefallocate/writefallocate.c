@@ -46,11 +46,13 @@
 
 #define FLAG_DONT_UNLINK	0x1
 #define FLAG_VERBOSE		0x2
+#define FLAG_OSYNC		0x4
 
 
 
 #define FL_DONTUNLINK(flags) ((flags) & FLAG_DONT_UNLINK)
 #define FL_VERBOSE(flags) ((flags) & FLAG_VERBOSE)
+#define FL_OSYNC(flags) ((flags) & FLAG_OSYNC)
 
 
 
@@ -112,6 +114,7 @@ write_fallocate_test(struct run_params rp)
 {
 	int i;
 	char runstr[10], runfile[50];
+	int openmode =  O_CREAT | O_WRONLY;
 
 	rp.data = (char *)malloc(sizeof(char) * rp.wrblksize);
 	if (rp.data == NULL) {
@@ -127,7 +130,9 @@ write_fallocate_test(struct run_params rp)
 		rp.runfile = runfile;
 
 		fprintf(stderr, "RUN %d: writing to file %s\n", i, runfile);
-		rp.fd = open(runfile, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
+		if(FL_OSYNC(rp.flags))
+			openmode |= O_SYNC;
+		rp.fd = open(runfile, openmode, S_IRUSR | S_IWUSR);
 		if(rp.fd < 0) {
 			fprintf(stderr, "Could not create file: %s: %s\n",
 					runfile, strerror(errno));
@@ -180,6 +185,8 @@ usage()
 	fprintf(stdout, "\t\t--fallocmode={DEFAULT:keepsize | allocate |"
 			" resvspace}\n");
 	
+	fprintf(stdout, "\t\t--osync\n"
+			"\t\t\tNOTE: By default, writes are buffered.\n");
 }
 
 static int
@@ -265,6 +272,11 @@ main(int argc, char *argv[])
 
 		if((strncmp(argv[i], "--fallocmode", 12)) == 0) {
 			rp.falloc_mode = parse_falloc_mode(argv[i]);
+			continue;
+		}
+
+		if((strcmp(argv[i], "--osync")) == 0) {
+			rp.flags |= FLAG_OSYNC;
 			continue;
 		}
 
