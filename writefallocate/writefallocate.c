@@ -140,7 +140,7 @@ write_fallocate_test(struct run_params rp)
 		}
 
 		write_file(rp);
-
+		close(rp.fd);
 		if(!FL_DONTUNLINK(rp.flags))
 			unlink(runfile);
 	}
