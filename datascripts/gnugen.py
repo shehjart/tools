@@ -155,6 +155,12 @@ def main(file):
 			t_idx = sys.argv.index("pointsize")
 			print "set pointsize " + sys.argv[t_idx + 1] 
 
+		if "xgrid" in sys.argv:
+			print "set grid xtics"
+
+		if "ygrid" in sys.argv:
+			print "set grid ytics"
+
 	except:
 		 sys.stderr.write(sys.argv[0] + " : Some argument/option missing for " + sys.argv[t_idx] + "\n")
 		 sys.exit(0)
