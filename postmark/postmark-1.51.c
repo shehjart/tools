@@ -132,7 +132,7 @@ cmd command_list[]={ /* table of CLI commands */
    {"show",cli_show,"Displays current configuration"},
    {"help",cli_help,"Prints out available commands"},
    {"quit",cli_quit,"Exit program"},
-   NULL
+   {NULL}
 };
 
 extern void verbose_report();
@@ -522,22 +522,31 @@ time_t t0;
 }
 
 /* prints out results from running transactions */
-void verbose_report(fp,end_time,start_time,t_end_time,t_start_time,deleted)
+void verbose_report(fp,end_time,start_time,t_end_time,t_start_time,deleted,dir_create_start, dir_create_end, dir_del_start,dir_del_end)
 FILE *fp;
-time_t end_time,start_time,t_end_time,t_start_time; /* timers from run */
+time_t end_time,start_time,t_end_time,t_start_time,dir_create_start,dir_create_end; /* timers from run */
+time_t dir_del_start,dir_del_end;
 int deleted; /* files deleted back-to-back */
 {
    time_t elapsed,t_elapsed;
    int interval;
+   time_t dir_create_time, dir_del_time;
 
    elapsed=diff_time(end_time,start_time);
    t_elapsed=diff_time(t_end_time,t_start_time);
+   dir_create_time=diff_time(dir_create_end, dir_create_start);
+   dir_del_time=diff_time(dir_del_end, dir_del_start);
 
    fprintf(fp,"Time:\n");
    fprintf(fp,"\t%d seconds total\n", (int)elapsed);
    fprintf(fp,"\t%d seconds of transactions (%d per second)\n", (int)t_elapsed,
       (int)(transactions/t_elapsed));
 
+   fprintf(fp, "\nSubdirectories:\n");
+   fprintf(fp, "\tCreated: %d (%d per second)\n",
+                subdirectories, (int)(subdirectories/dir_create_time));
+   fprintf(fp, "\tDeleted: %d (%d per second)\n",
+                subdirectories, (int)(subdirectories/dir_del_time));
    fprintf(fp,"\nFiles:\n");
    fprintf(fp,"\t%d created (%d per second)\n",files_created,
       (int)(files_created/elapsed));
@@ -955,6 +964,8 @@ char *param; /* unused */
    FILE *fp=NULL; /* file descriptor for directing output */
    int incomplete;
    int i; /* generic iterator */
+   time_t dir_create_start,dir_create_end;
+   time_t dir_del_start, dir_del_end;
 
    reset_counters(); /* reset counters before each run */
 
@@ -981,7 +992,9 @@ char *param; /* unused */
       {
       printf("Creating subdirectories...");
       fflush(stdout);
+      time(&dir_create_start);
       create_subdirectories(file_systems,NULL,subdirectories);
+      time(&dir_create_end);
       printf("Done\n");
       }
 
@@ -1018,7 +1031,9 @@ char *param; /* unused */
       {
       printf("Deleting subdirectories...");
       fflush(stdout);
+      time(&dir_del_start);
       delete_subdirectories(file_systems,NULL,subdirectories);
+      time(&dir_del_end);
       printf("Done\n");
       }
 
@@ -1037,7 +1052,7 @@ char *param; /* unused */
 
    if (!incomplete)
       reports[report](fp,end_time,start_time,t_end_time,t_start_time,
-         files_deleted-delete_base);
+         files_deleted-delete_base, dir_create_start, dir_create_end,dir_del_start, dir_del_end);
 
    if (param && fp!=stdout)
       fclose(fp);
