@@ -36,9 +36,7 @@ usage ()
 
 
 static int
-file_fchown (char * fname,
-                uid_t uid,
-                gid_t gid)
+file_fchown (char * fname, uid_t uid, gid_t gid)
 {
         int     fd = 0;
 
@@ -62,8 +60,7 @@ file_fchown (char * fname,
 }
 
 int
-main (int argc,
-        char *argv[])
+main (int argc, char *argv[])
 {
         int             fd;
         char            *path = NULL;

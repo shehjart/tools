@@ -35,8 +35,7 @@ usage ()
 
 
 static int
-file_fchmod (char * fname,
-                mode_t mode)
+file_fchmod (char * fname, mode_t mode)
 {
         int     fd = 0;
 
@@ -59,8 +58,7 @@ file_fchmod (char * fname,
 }
 
 int
-main (int argc,
-        char *argv[])
+main (int argc, char *argv[])
 {
         int             fd;
         mode_t          mode = 0777; 
