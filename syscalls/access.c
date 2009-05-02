@@ -37,8 +37,7 @@ usage ()
 
 
 static int
-path_access (char * fname,
-                int mode)
+path_access (char * fname, int mode)
 {
         fprintf (stdout, "Accessing file: %s\n", fname);
         if (access (fname, mode) < 0) {
@@ -50,8 +49,7 @@ path_access (char * fname,
 }
 
 int
-main (int argc,
-        char *argv[])
+main (int argc, char *argv[])
 {
         char    *path = NULL;
         int     mode = R_OK | W_OK | X_OK;
