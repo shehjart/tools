@@ -22,7 +22,7 @@ MOUNTED_CLIENTLOG="/test/clog2"
 VOLNAME="localdiskthreads"
 LOGLEVEL="DEBUG"
 GLUSTERFS="/usr/local/sbin/glusterfs"
-OUTPUT="/home/shehjart/code/tools-git/filetables/gluster.dat"
+OUTPUT="/home/shehjart/code/tools-git/filetables/gluster-new.dat"
 
 
 #clean the logs
