@@ -27,8 +27,12 @@ usage ()
         fprintf (stderr, "\texclusive. The last one specified on the command");
         fprintf (stderr, "\n\t line applies.\n");
         fprintf (stderr, "--test-path <path>\n");
+        fprintf (stderr, "\tTest path is required for both posix and glusterfs"
+                 " tests.\n");
+        fprintf (stderr, "--vmp <path>\n");
         fprintf (stderr, "\tIn case of --glusterfstest, this is used as the");
         fprintf (stderr, "\t VMP.\n");
+        fprintf (stderr, "--output <outputfile\n");
 
         gip_usage ();
 
@@ -47,6 +51,7 @@ struct runcontrol {
         int     dryrun;
         int     whichcreat;
         char    *testpath;
+        FILE    *output;
 };
 
 
@@ -114,7 +119,6 @@ run_glfiletable_test (int fdcount, struct runcontrol *rc)
         struct timeval  starttime, endtime;
         u_int64_t       startusecs, endusecs, duration;
         
-        
         gettimeofday (&starttime, NULL);
         if (create_files (fdcount, rc) == -1)
                 return -1;
@@ -124,9 +128,11 @@ run_glfiletable_test (int fdcount, struct runcontrol *rc)
         endusecs = timeval_to_usecs (endtime);
         duration = endusecs - startusecs;
 
-        fprintf (stdout, "%d %"PRIu64" %"PRIu64"\n", fdcount, duration,
+        fprintf (rc->output, "%d %"PRIu64" %"PRIu64"\n", fdcount, duration,
                  (duration / fdcount));
 
+        if (rc->output != stdout)
+                fclose (rc->output);
         return 0;
 }
 
@@ -138,6 +144,8 @@ main (int argc, char *argv[])
         int                             i = 0;
         char                            *fdptr = NULL;
         struct runcontrol               rc;
+        char                            *vmp = NULL;
+        char                            *ofile = NULL;
 
         memset (&rc, 0, sizeof (struct runcontrol));
         for (;i < argc; ++i) {
@@ -176,6 +184,17 @@ main (int argc, char *argv[])
                         return 0;
                 }
 
+                if (strcmp (argv[i], "--vmp") == 0) {
+                        vmp = argv[i+1];
+                        continue;
+                }
+
+                if (strcmp (argv[i], "--output") == 0) {
+                        ofile = argv[i+1];
+                        continue;
+                }
+
+
         }
 
         if (fdptr == NULL) {
@@ -210,11 +229,26 @@ main (int argc, char *argv[])
                         return -1;
                 }
 
-                if ((glusterfs_mount (rc.testpath, ipars)) < 0) {
+                if (vmp == NULL) {
+                        fprintf(stderr, "VMP not given for glusterfs test.\n");
+                        usage ();
+                        return -1;
+                }
+
+                if ((glusterfs_mount (vmp, ipars)) < 0) {
                         fprintf (stderr, "Error mounting glusterfs\n");
                         return -1;
                 }
         }
+
+        if (ofile != NULL) {
+                rc.output = fopen (ofile, "a");
+                if (rc.output == NULL) {
+                        fprintf (stderr, "Error opening output file\n");
+                        return -1;
+                }
+        } else
+                rc.output = stdout;
 
         run_glfiletable_test (fdcount, &rc);
         return 0;
