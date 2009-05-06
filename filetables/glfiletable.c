@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <inttypes.h>
+#include <fcntl.h>
 
 #define timeval_to_usecs(ts)    (((u_int64_t)ts.tv_sec * 1000000) + ts.tv_usec)
 
@@ -56,11 +57,11 @@ struct runcontrol {
 
 
 int
-glusterfs_creat_test (char *fname)
+glusterfs_open_test (char *fname)
 {
         glusterfs_file_t        fh = NULL;
                 
-        fh = glusterfs_creat (fname, S_IRWXU);
+        fh = glusterfs_open (fname, O_RDWR);
         if (fh == NULL)
                 return -1;
 
@@ -68,11 +69,11 @@ glusterfs_creat_test (char *fname)
 }
 
 int
-posix_creat_test (char *fname)
+posix_open_test (char *fname)
 {
         int fd = 0;
 
-        fd = creat (fname, S_IRWXU);
+        fd = open (fname, O_RDWR);
         if (fd == -1)
                 return -1;
 
@@ -80,7 +81,7 @@ posix_creat_test (char *fname)
 }
 
 int
-create_files (int fdcount, struct runcontrol *rc)
+open_files (int fdcount, struct runcontrol *rc)
 {
         int                     i = 0;
         char                    fname[1024];
@@ -98,9 +99,9 @@ create_files (int fdcount, struct runcontrol *rc)
                         continue;
 
                 if (rc->whichcreat == CREAT_GLUSTERFS)
-                        ret = glusterfs_creat_test (fname);
+                        ret = glusterfs_open_test (fname);
                 else
-                        ret = posix_creat_test (fname);
+                        ret = posix_open_test (fname);
 
                 err = errno;
                 if (ret == -1) {
@@ -120,7 +121,7 @@ run_glfiletable_test (int fdcount, struct runcontrol *rc)
         u_int64_t       startusecs, endusecs, duration;
         
         gettimeofday (&starttime, NULL);
-        if (create_files (fdcount, rc) == -1)
+        if (open_files (fdcount, rc) == -1)
                 return -1;
         gettimeofday (&endtime, NULL);
 
